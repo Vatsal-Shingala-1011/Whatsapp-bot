@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
  */
 export async function saveWhatsAppMessage(msg = '') {
   try {
-    const senderId = msg.key.remoteJid;
+    const senderId = msg.key.participant || msg.key.remoteJid;
     const senderName = msg.pushName || msg.verifiedBizName || "Unkown";
     const timestamp = new Date(msg.messageTimestamp * 1000); // messageTimestamp: 1738975201
     const time = timestamp.toLocaleString("en-IN", {  //[8 February 2025 at 6:10:01 am]
@@ -28,7 +28,7 @@ export async function saveWhatsAppMessage(msg = '') {
 
     // Handle text messages first
     if (msg.message?.conversation) {
-      const logEntry = `[${time}] ${senderId} ${senderName}: ${msg.message.conversation}\n`;
+      const logEntry = `[${time}] ${senderId} ${msg.key.participant?msg.key.remoteJid:''} ${senderName}: ${msg.message.conversation}\n`;
       console.log(logEntry);
       await appendToLog(logEntry);
       return;
@@ -39,13 +39,14 @@ export async function saveWhatsAppMessage(msg = '') {
       imageMessage: { type: 'image', folder: 'Images' },
       videoMessage: { type: 'video', folder: 'Videos' },
       stickerMessage: { type: 'sticker', folder: 'Stickers' },
-      documentMessage: { type: 'document', folder: 'Documents' }
+      documentMessage: { type: 'document', folder: 'Documents' },
+      audioMessage: { type: 'audio', folder: 'Audio' }
     };
 
     const messageType = Object.keys(messageTypes).find(type => msg.message?.[type]);
     if (!messageType) {
       // Log unsupported message type
-      const logEntry = `[${time}] ${senderId} ${senderName}: Unsupported message type\n`;
+      const logEntry = `[${time}] ${senderId} ${msg.key.remoteJid?msg.key.remoteJid:''} ${senderName}: Unsupported message type\n`;
       await appendToLog(logEntry);
       return;
     }
@@ -83,7 +84,7 @@ export async function saveWhatsAppMessage(msg = '') {
     });
 
     // Create log entry for media message
-    let logMessage = `[${time}] ${senderId} ${senderName}: Sent ${type}`;
+    let logMessage = `[${time}] ${senderId} ${msg.key.remoteJid?msg.key.remoteJid:''} ${senderName}: Sent ${type}`;
     if (messageType === 'documentMessage') {
       logMessage += ` (${mediaMessage.fileName})`;
     }
@@ -98,7 +99,10 @@ export async function saveWhatsAppMessage(msg = '') {
     console.log(`File path: ${filePath}`);
     console.log(`File size: ${formatFileSize(fileStats.size)}`);
 
-    if (messageType === 'videoMessage') {
+    if (messageType === 'audioMessage') {
+      console.log(`Duration: ${mediaMessage.seconds} seconds`);
+      console.log(`PTT (Push to Talk): ${mediaMessage.ptt}`);
+    } else if (messageType === 'videoMessage') {
       console.log(`Duration: ${mediaMessage.seconds} seconds`);
       console.log(`Resolution: ${mediaMessage.width}x${mediaMessage.height}`);
     } else if (messageType === 'imageMessage' || messageType === 'stickerMessage') {

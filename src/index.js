@@ -36,8 +36,8 @@ async function connectToWhatsApp() {
   sock.ev.on("messages.upsert", async (m) => {
     if (m.type !== "notify" ) return; // Ignore non-notification messages
     const messages = m.messages;
-
     for (const msg of messages) {
+      console.log('messages->',msg);
       await saveWhatsAppMessage(msg);
     }
   });
