@@ -2,7 +2,7 @@ import pkg from "@whiskeysockets/baileys";
 const { makeWASocket, DisconnectReason, useMultiFileAuthState } = pkg;
 import { Boom } from "@hapi/boom";
 import fs from "fs";
-import { saveWhatsAppMedia } from "./saveWhatsAppMedia.js";
+import { saveWhatsAppMessage } from "./saveWhatsAppMessage.js";
 
 async function connectToWhatsApp() {
   // Setup persistent authentication
@@ -38,36 +38,7 @@ async function connectToWhatsApp() {
     const messages = m.messages;
 
     for (const msg of messages) {
-      const senderId = msg.key.participant || msg.key.remoteJid; // senderId's WhatsApp ID
-      console.log('messages---> ',msg);
-
-      const messageContent =
-        msg.message?.conversation ||
-        msg.message?.extendedTextMessage?.text ||
-        "Unsupported message type";
-
-      const timestamp = new Date(msg.messageTimestamp * 1000); // messageTimestamp: 1738975201
-      const time = timestamp.toLocaleString("en-IN", {  //[8 February 2025 at 6:10:01 am]
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        second: "numeric",
-        hour12: true 
-      });
-      const senderIdName = msg.pushName || msg.verifiedBizName || "user";
-
-      await saveWhatsAppMedia(msg);
-
-      console.log(`[${time}] Message from ${senderId} ${senderIdName}: ${messageContent}`);
-
-      // Save the message locally
-      const logEntry = `[${time}] ${senderId} ${senderIdName}: ${messageContent}\n`;
-      fs.appendFileSync("logs/messages.log", logEntry, "utf8");
-
-      // Automatically reply to the message
-    //   await sock.sendMessage(senderId, { text: "Hello! Your message has been saved." });
+      await saveWhatsAppMessage(msg);
     }
   });
 
