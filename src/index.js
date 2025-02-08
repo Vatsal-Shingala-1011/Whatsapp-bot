@@ -2,8 +2,7 @@ import pkg from "@whiskeysockets/baileys";
 const { makeWASocket, DisconnectReason, useMultiFileAuthState } = pkg;
 import { Boom } from "@hapi/boom";
 import fs from "fs";
-import { saveWhatsAppImage } from "./saveImage.js";
-import qrcode from 'qrcode-terminal';
+import { saveWhatsAppMedia } from "./saveWhatsAppMedia.js";
 
 async function connectToWhatsApp() {
   // Setup persistent authentication
@@ -59,19 +58,13 @@ async function connectToWhatsApp() {
       });
       const senderIdName = msg.pushName || msg.verifiedBizName || "user";
 
-      saveWhatsAppImage(msg);
-      // try{
-      //   saveWhatsAppImage(msg);
-      // }catch (err) {
-      //   // console.error("noo image:", err);
-      //   console.log('noo image');
-      // }
+      await saveWhatsAppMedia(msg);
 
       console.log(`[${time}] Message from ${senderId} ${senderIdName}: ${messageContent}`);
 
       // Save the message locally
       const logEntry = `[${time}] ${senderId} ${senderIdName}: ${messageContent}\n`;
-      fs.appendFileSync("messages.log", logEntry, "utf8");
+      fs.appendFileSync("logs/messages.log", logEntry, "utf8");
 
       // Automatically reply to the message
     //   await sock.sendMessage(senderId, { text: "Hello! Your message has been saved." });
